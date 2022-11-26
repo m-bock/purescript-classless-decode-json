@@ -14,20 +14,19 @@ module Classless.DecodeJson
   , decodeJsonField
   , module Exp
   , maybe
+  , number
   ) where
 
 import Classless as Cls
 import Classless.DecodeJson.Generic (class Sum, sum) as Exp
-import Data.Argonaut (Json, JsonDecodeError)
 import Data.Argonaut.Core (Json, toObject)
 import Data.Argonaut.Decode.Decoders as Arg
 import Data.Argonaut.Decode.Error (JsonDecodeError(..))
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
-import Data.Either (Either)
 import Data.Maybe (Maybe(..))
 import Data.Symbol (class IsSymbol, reflectSymbol)
-import Data.Tuple (Tuple(..))
+import Data.Tuple (Tuple)
 import Foreign.Object as FO
 import Prelude (bind, ($), (<$>))
 import Prim.Row (class Union)
@@ -43,6 +42,9 @@ int = Arg.decodeInt
 
 string :: DecodeJson String
 string = Arg.decodeString
+
+number :: DecodeJson Number
+number = Arg.decodeNumber
 
 boolean :: DecodeJson Boolean
 boolean = Arg.decodeBoolean
@@ -60,7 +62,7 @@ tuple :: forall a b. DecodeJson a -> DecodeJson b -> DecodeJson (Tuple a b)
 tuple = Arg.decodeTuple
 
 class Record spec r | r -> spec where
-  record :: { | spec } -> Json -> Either JsonDecodeError {|r}
+  record :: { | spec } -> Json -> Either JsonDecodeError { | r }
 
 instance decodeRecord ::
   ( GDecodeJson spec row list
@@ -96,7 +98,7 @@ instance gDecodeJsonCons ::
     case decodeJsonField decodeJson fieldValue of
       Just fieldVal -> do
         val <- lmap (AtKey fieldName) fieldVal
-        rest <- gDecodeJson (Cls.pick spec :: {|specX}) object (Proxy :: Proxy tail)
+        rest <- gDecodeJson (Cls.pick spec :: { | specX }) object (Proxy :: Proxy tail)
         Right $ Record.insert _field val rest
 
       Nothing ->

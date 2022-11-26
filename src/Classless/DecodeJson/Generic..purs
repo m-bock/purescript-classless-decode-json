@@ -16,21 +16,25 @@ module Classless.DecodeJson.Generic
 import Prelude
 
 import Classless (type (~), NoArgs(..), (~))
+import Classless as Cls
 import Control.Alt ((<|>))
 import Data.Argonaut.Core (Json, fromString, toArray, toObject, toString, fromArray)
 import Data.Argonaut.Decode (JsonDecodeError(..))
 import Data.Array (uncons)
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..), note)
+import Data.Generic.Rep (Constructor(..))
 import Data.Generic.Rep as Rep
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple.Nested (type (/\), (/\))
 import Foreign.Object as FO
 import Partial.Unsafe (unsafeCrashWith)
-import Prim.Row (class Cons)
+import Prim.Row (class Cons, class Lacks, class Union)
 import Prim.TypeError (class Fail, Text)
 import Record as Record
+import Type.Equality (class TypeEquals)
 import Type.Proxy (Proxy(..))
+import Unsafe.Coerce (unsafeCoerce)
 
 type Encoding =
   { tagKey :: String
@@ -51,15 +55,28 @@ class DecodeRep sumSpec r | r -> sumSpec where
 decodeRep :: forall sumSpec r. DecodeRep sumSpec r => { | sumSpec } -> Json -> Either JsonDecodeError r
 decodeRep spec = decodeRepWith spec defaultEncoding
 
-instance decodeRepNoConstructors :: DecodeRep spec Rep.NoConstructors where
+instance decodeRepNoConstructors :: DecodeRep () Rep.NoConstructors where
   decodeRepWith _ _ _ = Left $ UnexpectedValue $ fromString "NoConstructors (Cannot decode empty data type)"
 
 instance decodeRepSum ::
-  ( DecodeRep spec a
-  , DecodeRep spec b
+  ( DecodeRep specA a
+  , DecodeRep specB b
+  , TypeEquals a (Constructor sym x)
+  , Cons sym s specB spec
+  , Cons sym s () specA
+  , Lacks sym specB
+  , IsSymbol sym
+  , Union specA specB spec
+  , Union specB specA spec
   ) =>
   DecodeRep spec (Rep.Sum a b) where
-  decodeRepWith spec e j = Rep.Inl <$> decodeRepWith spec e j <|> Rep.Inr <$> decodeRepWith spec e j
+  decodeRepWith spec e j =
+    Rep.Inl
+      <$> decodeRepWith specA e j <|> Rep.Inr <$> decodeRepWith specB e j
+    where
+      specA = Cls.pick spec :: {| specA}
+      specB = Cls.pick spec :: {| specB}
+
 
 withTag
   :: Encoding
@@ -116,7 +133,7 @@ construct spec e valuesArray decodingErr = do
 
 instance decodeRepConstructorNoArgs ::
   ( IsSymbol name
-  , Cons name NoArgs specX spec
+  , Cons name NoArgs () spec
   ) =>
   DecodeRep
     spec
@@ -128,7 +145,7 @@ instance decodeRepConstructorNoArgs ::
 
 else instance decodeRepConstructorArg ::
   ( IsSymbol name
-  , Cons name (Json -> Either JsonDecodeError a) specX spec
+  , Cons name (Json -> Either JsonDecodeError a) () spec
   ) =>
   DecodeRep
     spec
@@ -146,7 +163,7 @@ else instance decodeRepConstructorArg ::
 else instance decodeRepConstructor ::
   ( IsSymbol name
   , DecodeRepArgs specA a
-  , Cons name (specA) specX spec
+  , Cons name specA () spec
   ) =>
   DecodeRep
     spec

@@ -109,41 +109,41 @@ decUser'2 = decodeJson
 decRemoteData'2 :: DecodeJson RemoteData
 decRemoteData'2 = genericSum
 
--- decUser'3 :: DecodeJson User
--- decUser'3 = Dec.record
---   $ Record.union
---       { age: Dec.int
---       }
---   $ initRecord MyInit
+decUser'3 :: DecodeJson User
+decUser'3 = Dec.record
+  $ Record.union
+      { age: Dec.int
+      }
+  $ initRecord MyInit
 
--- decAB :: DecodeJson { a :: Int, b :: Char }
--- decAB = Dec.record
---   $ Record.union
---       { b: Dec.char
---       }
---   $ initRecord MyInit
+decAB :: DecodeJson { a :: Int, b :: Number }
+decAB = Dec.record
+  $ Record.union
+      { b: Dec.number
+      }
+  $ initRecord MyInit
 
--- decRemoteData'3 :: DecodeJson RemoteData
--- decRemoteData'3 = Dec.sum
---   $ Record.union
---       { "Error": Dec.string
---       }
---   $ initSum MyInit
+decRemoteData'3 :: DecodeJson RemoteData
+decRemoteData'3 = Dec.sum
+  $ Record.union
+      { "Error": Dec.string
+      }
+  $ initSum MyInit
 
--- decRemoteData'4 :: DecodeJson RemoteData
--- decRemoteData'4 = Dec.sum
---   $ Record.union
---       { "Loading": DecodeJson ~ DecodeJson ~ Dec.int
---       }
---   $ initSum MyInit
+decRemoteData'4 :: DecodeJson RemoteData
+decRemoteData'4 = Dec.sum
+  $ Record.union
+      { "Loading": decodeJson ~ decodeJson ~ Dec.int
+      }
+  $ initSum MyInit
 
--- decRemoteData'5 :: DecodeJson RemoteData
--- decRemoteData'5 = Dec.sum
---   $ Record.union
---       { "Success": Dec.record
---           $ Record.union
---               { status: Dec.int
---               }
---           $ initRecord MyInit
---       }
---   $ initSum MyInit
+decRemoteData'5 :: DecodeJson RemoteData
+decRemoteData'5 = Dec.sum
+  $ Record.union
+      { "Success": Dec.record
+          $ Record.union
+              { status: Dec.int
+              }
+          $ initRecord MyInit
+      }
+  $ initSum MyInit
