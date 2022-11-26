@@ -64,7 +64,7 @@ tuple = Arg.decodeTuple
 class Record spec r | r -> spec where
   record :: { | spec } -> Json -> Either JsonDecodeError { | r }
 
-instance decodeRecord ::
+instance
   ( GDecodeJson spec row list
   , RL.RowToList row list
   ) =>
@@ -77,10 +77,10 @@ instance decodeRecord ::
 class GDecodeJson (spec :: Row Type) (row :: Row Type) (list :: RL.RowList Type) | list -> row spec where
   gDecodeJson :: forall proxy. { | spec } -> FO.Object Json -> proxy list -> Either JsonDecodeError (Record row)
 
-instance gDecodeJsonNil :: GDecodeJson () () RL.Nil where
+instance GDecodeJson () () RL.Nil where
   gDecodeJson _ _ _ = Right {}
 
-instance gDecodeJsonCons ::
+instance
   ( DecodeJsonField value
   , GDecodeJson specX rowTail tail
   , IsSymbol field
@@ -110,11 +110,11 @@ instance gDecodeJsonCons ::
 class DecodeJsonField a where
   decodeJsonField :: (Json -> Either JsonDecodeError a) -> Maybe Json -> Maybe (Either JsonDecodeError a)
 
-instance decodeFieldMaybe ::
+instance
   DecodeJsonField (Maybe a) where
   decodeJsonField _ Nothing = Just $ Right Nothing
   decodeJsonField decodeJson (Just j) = Just $ decodeJson j
 
-else instance decodeFieldId ::
+else instance
   DecodeJsonField a where
   decodeJsonField decodeJson j = decodeJson <$> j
