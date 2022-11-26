@@ -11,5 +11,5 @@ in  upstream
       , repo =
           "https://github.com/thought2/purescript-classless.git"
       , version =
-          "main"
+          "v0.1.1"
       }
